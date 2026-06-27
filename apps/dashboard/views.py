@@ -27,7 +27,7 @@ def _org():
 
 
 # Vapi's built-in voices (provider "vapi"); no extra API key needed. Confirm the
-# exact list in your Vapi dashboard — edit here to add/remove options.
+# exact list in your Vapi dashboard - edit here to add/remove options.
 VAPI_VOICES = [
     "Elliot",
     "Rohan",
@@ -54,7 +54,7 @@ def settings_view(request):
         if voice_id:
             messages.success(request, f"All calls will now use the “{voice_id}” voice.")
         else:
-            messages.success(request, "Voice override cleared — using the assistant's own voice.")
+            messages.success(request, "Voice override cleared - using the assistant's own voice.")
         return redirect("settings")
 
     return render(

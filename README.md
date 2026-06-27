@@ -1,14 +1,14 @@
-# Voice AI — AI Sales Calling Platform (MVP)
+# Voice AI - AI Sales Calling Platform (MVP)
 
 Outbound AI sales calling. Upload a CSV of leads (or add one by hand), create a
-campaign, and an AI voice agent calls each lead — **throttled**, with automatic
+campaign, and an AI voice agent calls each lead - **throttled**, with automatic
 **retries**, and full **transcripts, recordings and structured outcomes** stored
 for every call.
 
 **One-line architecture:** [Vapi](https://vapi.ai) runs the voice conversation
 over **your own Twilio Elastic SIP Trunk** (BYO-SIP); this Django backend
 orchestrates *which* leads to call, *how fast*, and stores the results from
-Vapi's webhooks. **The backend never streams audio — Vapi does.**
+Vapi's webhooks. **The backend never streams audio - Vapi does.**
 
 > 📐 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for diagrams and
 > [`TECHNICAL_DETAILS.md`](./TECHNICAL_DETAILS.md) for the implementation deep-dive.
@@ -28,9 +28,9 @@ CSV / manual ─▶ Lead ─▶ Campaign(throttle) ─▶ Celery dispatch ─▶
 3. [Project layout](#project-layout)
 4. [Prerequisites](#prerequisites)
 5. [Local setup](#1-local-setup)
-6. [Twilio — Elastic SIP Trunk](#2-twilio--create-the-elastic-sip-trunk-byo-sip)
-7. [Vapi — account & provisioning](#3-vapi--account--provisioning)
-8. [Webhooks — let Vapi reach you](#4-webhooks--let-vapi-reach-you)
+6. [Twilio - Elastic SIP Trunk](#2-twilio--create-the-elastic-sip-trunk-byo-sip)
+7. [Vapi - account & provisioning](#3-vapi--account--provisioning)
+8. [Webhooks - let Vapi reach you](#4-webhooks--let-vapi-reach-you)
 9. [Using the app](#5-using-the-app)
 10. [REST API](#rest-api)
 11. [CSV format](#csv-format)
@@ -44,22 +44,22 @@ CSV / manual ─▶ Lead ─▶ Campaign(throttle) ─▶ Celery dispatch ─▶
 
 ## Features
 
-- **Leads** — import a CSV (with column auto-detection + E.164 normalization) or
+- **Leads** - import a CSV (with column auto-detection + E.164 normalization) or
   add a single lead by hand. View and **delete** leads from a dedicated page.
-- **Campaigns** — batch leads into a campaign with per-campaign throttle and
+- **Campaigns** - batch leads into a campaign with per-campaign throttle and
   retry policy; **Start / Pause / Resume / Stop** from the UI or API.
-- **AI calling** — each lead is dialed by a Vapi assistant (Anthropic Claude
+- **AI calling** - each lead is dialed by a Vapi assistant (Anthropic Claude
   brain by default) over your Twilio trunk. Lead CSV columns are passed as
   personalization variables.
-- **Throttling** — hard concurrency cap + per-minute rate limit per campaign,
+- **Throttling** - hard concurrency cap + per-minute rate limit per campaign,
   enforced atomically across overlapping dispatch ticks.
-- **Automatic retries** — no-answer / busy / voicemail outcomes retry up to
+- **Automatic retries** - no-answer / busy / voicemail outcomes retry up to
   `max_attempts` after a backoff.
-- **Results** — transcript, recording URL, AI summary, success evaluation,
+- **Results** - transcript, recording URL, AI summary, success evaluation,
   structured data and cost, captured from Vapi webhooks and shown per call.
-- **Voice selection** — pick an org-wide default voice in **Settings**.
-- **Dashboard** — clean, login-gated HTMX UI with live status polling.
-- **REST API** — `/api/` endpoints in parallel for automation / a future SPA.
+- **Voice selection** - pick an org-wide default voice in **Settings**.
+- **Dashboard** - clean, login-gated HTMX UI with live status polling.
+- **REST API** - `/api/` endpoints in parallel for automation / a future SPA.
 
 ---
 
@@ -70,7 +70,7 @@ CSV / manual ─▶ Lead ─▶ Campaign(throttle) ─▶ Celery dispatch ─▶
 | Web framework | **Django 5 + Django REST Framework** |
 | Async / jobs | **Celery + Redis** (broker, result backend, rate buckets) |
 | Database | **Postgres** (system of record) |
-| Voice agent | **Vapi** — STT (Deepgram) · LLM (Anthropic Claude) · TTS |
+| Voice agent | **Vapi** - STT (Deepgram) · LLM (Anthropic Claude) · TTS |
 | Telephony | **Twilio Elastic SIP Trunk** (BYO-SIP egress) |
 | UI | Server-rendered Django templates + **HTMX** |
 | Tooling | **uv** (deps/venv), **pytest**, **ruff**, Python **3.14** |
@@ -86,7 +86,7 @@ apps/leads         Lead model + CSV import service (+ DRF api)
 apps/campaigns     Campaign/CampaignLead, dispatch + throttle + lifecycle
 apps/calls         Call model, Celery dispatch tasks
 apps/vapi          VapiClient, payload schemas, idempotent provisioning, command
-apps/webhooks      /webhooks/vapi/ — secret-verified event handlers
+apps/webhooks      /webhooks/vapi/ - secret-verified event handlers
 apps/dashboard     login-gated HTMX UI (campaigns, leads, settings, call detail)
 templates/         base.html (sidebar shell) + registration/login
 tests/             pytest suite (csv, dispatch/throttle, vapi, webhooks)
@@ -128,37 +128,37 @@ uv run celery -A config beat   -l info            # periodic dispatcher tick
 - Django admin → http://localhost:8000/admin/
 
 > **Dev shortcut:** set `CELERY_TASK_ALWAYS_EAGER=true` in `.env` to run tasks
-> inline (no worker/beat needed) while developing — calls fire synchronously in
+> inline (no worker/beat needed) while developing - calls fire synchronously in
 > the web process.
 
 ---
 
-## 2. Twilio — create the Elastic SIP Trunk (BYO-SIP)
+## 2. Twilio - create the Elastic SIP Trunk (BYO-SIP)
 
 1. Twilio Console → **Elastic SIP Trunking** → **Create a trunk**.
 2. Note the **Termination URI** (e.g. `your-trunk.pstn.twilio.com`) → this is
    `TWILIO_SIP_TERMINATION_URI`.
 3. Under **Termination**, configure authentication:
-   - **IP ACL** (recommended) — allowlist **Vapi's SBC IPs** so Vapi's outbound
+   - **IP ACL** (recommended) - allowlist **Vapi's SBC IPs** so Vapi's outbound
      `INVITE` is accepted. *(If these aren't allowlisted you'll get a SIP
-     `403 Forbidden` — see [Troubleshooting](#troubleshooting).)*
+     `403 Forbidden` - see [Troubleshooting](#troubleshooting).)*
    - and/or a **Credential List** → `TWILIO_SIP_USERNAME` / `TWILIO_SIP_PASSWORD`.
 4. Buy / attach a phone number to use as caller ID → `TWILIO_CALLER_ID`
    (E.164, e.g. `+15551234567`).
-5. **Voice → Geo Permissions** — enable the destination countries you'll call
+5. **Voice → Geo Permissions** - enable the destination countries you'll call
    (e.g. India `+91`). They're blocked by default.
 6. On a **trial** account you can only call **verified** numbers.
 
 ---
 
-## 3. Vapi — account & provisioning
+## 3. Vapi - account & provisioning
 
 1. Create a [Vapi](https://vapi.ai) account → copy your **private API key** →
    `VAPI_API_KEY`.
 2. Pick a long random `VAPI_WEBHOOK_SECRET`.
 3. Fill the Twilio + assistant values in `.env`. The assistant brain defaults to
    Anthropic Claude (`VAPI_MODEL_PROVIDER=anthropic`,
-   `VAPI_MODEL_NAME=claude-sonnet-4-6`) — confirm the exact model id against
+   `VAPI_MODEL_NAME=claude-sonnet-4-6`) - confirm the exact model id against
    Vapi's supported list before going live.
 4. Provision the BYO-SIP credential, the caller-ID number, and the assistant in
    one **idempotent** command:
@@ -167,7 +167,7 @@ uv run celery -A config beat   -l info            # periodic dispatcher tick
    uv run python manage.py provision_vapi
    ```
 
-   Re-running is safe — it skips resources whose IDs are already stored on the
+   Re-running is safe - it skips resources whose IDs are already stored on the
    Organization. Use `--force` to recreate them (e.g. after changing the webhook
    URL, prompt, model or voice in `.env`).
 
@@ -176,7 +176,7 @@ uv run celery -A config beat   -l info            # periodic dispatcher tick
 
 ---
 
-## 4. Webhooks — let Vapi reach you
+## 4. Webhooks - let Vapi reach you
 
 Vapi POSTs call events to a public URL. In dev, tunnel to `runserver`:
 
@@ -261,7 +261,7 @@ Grace Hopper,(415) 555-2672,US Navy,Arlington
   import.
 - Duplicates (same E.164 within the org or within the file) are **skipped**.
 - **Every extra column** (here `company`, `city`) is stored on the lead and
-  forwarded to Vapi as `variableValues` for prompt personalization — reference
+  forwarded to Vapi as `variableValues` for prompt personalization - reference
   them in the assistant prompt / first message as `{{company}}`, `{{city}}`, etc.
 
 ---
@@ -294,7 +294,7 @@ Grace Hopper,(415) 555-2672,US Navy,Arlington
 
 > These values are read by `provision_vapi` to **create** the assistant. Once
 > created, changing model/voice in the Vapi dashboard (or via Settings for the
-> voice) is what affects live calls — `.env` only re-applies on `--force`.
+> voice) is what affects live calls - `.env` only re-applies on `--force`.
 
 ---
 
@@ -311,7 +311,7 @@ kick on every `end-of-call-report` both call the dispatcher, which:
    `place_call` for each.
 
 A lead occupies a slot from reservation until a webhook (or a failed dispatch)
-resolves it — so concurrency can never exceed the cap, even across overlapping
+resolves it - so concurrency can never exceed the cap, even across overlapping
 ticks. No-answer / voicemail / busy outcomes are retried up to `max_attempts`
 after `retry_delay_minutes`. Full detail in
 [`TECHNICAL_DETAILS.md`](./TECHNICAL_DETAILS.md).
@@ -321,7 +321,7 @@ after `retry_delay_minutes`. Full detail in
 ## Choosing the agent voice
 
 **Settings → Agent voice** sets an **org-wide default** applied to *every*
-outbound call via Vapi `assistantOverrides.voice` — one assistant, any voice, no
+outbound call via Vapi `assistantOverrides.voice` - one assistant, any voice, no
 re-provisioning. Choosing **Assistant default** clears the override so calls fall
 back to the voice configured on the assistant in the Vapi dashboard.
 
@@ -352,7 +352,7 @@ Tests need Postgres + Redis running.
 |---------|-------------|
 | Call ends instantly, `endedReason: …outbound-sip-403-forbidden` | Twilio rejected Vapi's SIP `INVITE`. Add **Vapi's SBC IPs** to the trunk **Termination IP ACL** (and/or set credential-list auth matching `TWILIO_SIP_*`). |
 | Calls to a country never connect | Enable that country under Twilio **Voice → Geo Permissions**. |
-| Trial account can't reach a number | Twilio trials only call **verified** numbers — verify it first. |
+| Trial account can't reach a number | Twilio trials only call **verified** numbers - verify it first. |
 | `Unknown command: provision_vapi` | Ensure `apps.vapi` is in `INSTALLED_APPS` and run via `uv run python manage.py …`. |
 | Vapi `400` on provisioning (SIP gateway / model / messages) | Termination URI must be a host (not IP) with `inboundEnabled:false`; model must be a valid Vapi id. See `apps/vapi/schemas.py`. |
 | Empty transcript/summary after a call | The call never connected (e.g. SIP 403). Fix the connection first; a connected call posts the report to `/webhooks/vapi/`. |

@@ -19,7 +19,7 @@ class Command(BaseCommand):
         if not webhook_server_url():
             self.stdout.write(
                 self.style.WARNING(
-                    "PUBLIC_WEBHOOK_BASE_URL is empty — the assistant will be created "
+                    "PUBLIC_WEBHOOK_BASE_URL is empty - the assistant will be created "
                     "without a webhook server URL. Set it (your tunnel) and re-run with "
                     "--force to receive call events."
                 )

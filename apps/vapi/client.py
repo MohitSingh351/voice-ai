@@ -1,6 +1,6 @@
 """Thin HTTP client for the Vapi REST API.
 
-All Vapi calls go through here — no httpx/requests scattered across views or
+All Vapi calls go through here - no httpx/requests scattered across views or
 tasks. Methods return the parsed JSON dict from Vapi.
 """
 from __future__ import annotations

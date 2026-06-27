@@ -19,7 +19,7 @@
                 <td class="muted num">{{ row.lead.phone_e164 }}</td>
                 <td><span class="badge {{ row.status }}">{{ row.get_status_display }}</span></td>
                 <td class="num">{{ row.attempts }}</td>
-                <td>{% if call %}<span class="badge {{ call.status }}">{{ call.get_status_display }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                <td>{% if call %}<span class="badge {{ call.status }}">{{ call.get_status_display }}</span>{% else %}<span class="muted">-</span>{% endif %}</td>
                 <td style="text-align:right">{% if call %}<a href="{% url 'call_detail' call.id %}">Details →</a>{% endif %}</td>
             </tr>
             {% endwith %}

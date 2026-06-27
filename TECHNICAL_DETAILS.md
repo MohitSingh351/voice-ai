@@ -1,4 +1,4 @@
-# Voice AI — Technical Details
+# Voice AI - Technical Details
 
 Implementation-level reference for engineers working on the codebase. For the
 visual map see [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup/usage see
@@ -10,7 +10,7 @@ visual map see [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup/usage see
 
 1. [Design principles](#1-design-principles)
 2. [Request lifecycle, end to end](#2-request-lifecycle-end-to-end)
-3. [Data models — every field](#3-data-models--every-field)
+3. [Data models - every field](#3-data-models--every-field)
 4. [State machines](#4-state-machines)
 5. [Dispatch & concurrency](#5-dispatch--concurrency)
 6. [Rate limiting (Redis token bucket)](#6-rate-limiting-redis-token-bucket)
@@ -52,33 +52,33 @@ visual map see [`ARCHITECTURE.md`](./ARCHITECTURE.md); for setup/usage see
 
 ## 2. Request lifecycle, end to end
 
-1. **Ingest** — a `Lead` is created from CSV (`apps/leads/services/csv_import.py`)
+1. **Ingest** - a `Lead` is created from CSV (`apps/leads/services/csv_import.py`)
    or a single manual entry. Phone is normalized to E.164; extra CSV columns go
    to `Lead.variables`.
-2. **Batch** — a `Campaign` is created and leads attached as `CampaignLead`
+2. **Batch** - a `Campaign` is created and leads attached as `CampaignLead`
    rows in `PENDING` (`lifecycle.add_leads`).
-3. **Start** — `lifecycle.start_campaign` flips status to `RUNNING`, stamps
+3. **Start** - `lifecycle.start_campaign` flips status to `RUNNING`, stamps
    `started_at`, and kicks `tick_campaigns.delay(id)` immediately.
-4. **Dispatch** — `tick_campaigns` → `dispatch.plan_and_reserve`:
+4. **Dispatch** - `tick_campaigns` → `dispatch.plan_and_reserve`:
    `available_slots ∩ rate budget` → claims that many due `PENDING` leads via
    `SELECT … FOR UPDATE SKIP LOCKED`, flips to `IN_FLIGHT` (+1 attempt), enqueues
    `place_call` per lead.
-5. **Place** — `place_call` builds the payload and `POST /call`s Vapi, then
+5. **Place** - `place_call` builds the payload and `POST /call`s Vapi, then
    creates a `Call(vapi_call_id, status=queued)`. On API error the lead is
    released (`FAILED`/`EXHAUSTED`).
-6. **Connect** — Vapi sends a SIP `INVITE` to Twilio's termination over your
+6. **Connect** - Vapi sends a SIP `INVITE` to Twilio's termination over your
    BYO trunk; Twilio dials the lead on the PSTN.
-7. **Progress** — `status-update` webhooks move `Call` through
+7. **Progress** - `status-update` webhooks move `Call` through
    `ringing → in_progress`.
-8. **Finish** — `end-of-call-report` stores transcript, summary, recording,
+8. **Finish** - `end-of-call-report` stores transcript, summary, recording,
    structured outcome and cost; resolves the `CampaignLead`
    (`DONE`/`FAILED`/`EXHAUSTED`); kicks dispatch to refill the freed slot.
-9. **Complete** — when no `PENDING`/`IN_FLIGHT` leads remain,
+9. **Complete** - when no `PENDING`/`IN_FLIGHT` leads remain,
    `dispatch.maybe_complete` marks the campaign `COMPLETED`.
 
 ---
 
-## 3. Data models — every field
+## 3. Data models - every field
 
 ### `organizations.Organization`
 Single-tenant container; holds provisioned Vapi IDs and the default voice.
@@ -94,7 +94,7 @@ Single-tenant container; holds provisioned Vapi IDs and the default voice.
 | `default_voice_id` | char | e.g. `Elliot`; blank ⇒ assistant default |
 | `created_at` / `updated_at` | datetime | |
 
-Helpers: `is_provisioned` (`bool` — has phone + assistant), classmethod
+Helpers: `is_provisioned` (`bool` - has phone + assistant), classmethod
 `get_default()` (get-or-create `pk=1`).
 
 ### `leads.Lead`
@@ -128,7 +128,7 @@ Constraint: `unique(organization, phone_e164)`.
 Helpers: `resolved_assistant_id()`, `resolved_phone_number_id()` (campaign value
 or org fallback), `counts()` (status breakdown for the dashboard).
 
-### `campaigns.CampaignLead` — the dispatch work queue
+### `campaigns.CampaignLead` - the dispatch work queue
 | Field | Type | Notes |
 |-------|------|-------|
 | `campaign` / `lead` | FK | `unique(campaign, lead)` |
@@ -137,7 +137,7 @@ or org fallback), `counts()` (status breakdown for the dashboard).
 | `next_attempt_at` | datetime | retry gate; null ⇒ due now |
 | `updated_at` | datetime | |
 
-`ACTIVE_STATUSES = (IN_FLIGHT,)` — what counts against the concurrency cap.
+`ACTIVE_STATUSES = (IN_FLIGHT,)` - what counts against the concurrency cap.
 
 ### `calls.Call`
 | Field | Type | Notes |
@@ -213,7 +213,7 @@ in `tests/test_dispatch.py`.
 
 ## 6. Rate limiting (Redis token bucket)
 
-`apps/campaigns/services/throttle.py` — a **fixed-window** limiter keyed
+`apps/campaigns/services/throttle.py` - a **fixed-window** limiter keyed
 `campaign:{id}:rate:{epoch_minute}`. A Lua script reserves up to `want` tokens
 without exceeding `calls_per_minute`, atomically:
 
@@ -282,25 +282,25 @@ Two paths converge on the same policy (`attempts` vs `max_attempts`):
 
 `apps/vapi/` is the single HTTP boundary to Vapi.
 
-- **`client.py` — `VapiClient`** (httpx, bearer `VAPI_API_KEY`): `_post`/`_get`
+- **`client.py` - `VapiClient`** (httpx, bearer `VAPI_API_KEY`): `_post`/`_get`
   raise `VapiError(status_code, body)` on non-2xx. Methods:
   `create_byo_sip_credential`, `create_phone_number`, `create_assistant`,
   `place_call`, `get_call`.
-- **`schemas.py` — payload builders** (pure dict factories, easy to unit test as
+- **`schemas.py` - payload builders** (pure dict factories, easy to unit test as
   the Vapi schema evolves):
-  - `byo_sip_credential_payload` — `provider: byo-sip-trunk`, one **outbound-only**
+  - `byo_sip_credential_payload` - `provider: byo-sip-trunk`, one **outbound-only**
     gateway (`inboundEnabled:false`, `outboundEnabled:true`,
     `outboundLeadingPlusEnabled:true`). An inbound gateway would require a
-    numeric IPv4, but a `*.pstn.twilio.com` termination is a host — hence
+    numeric IPv4, but a `*.pstn.twilio.com` termination is a host - hence
     outbound-only. `outboundAuthenticationPlan` only included if username+password
     are set (otherwise Twilio authorizes Vapi by IP ACL).
-  - `byo_phone_number_payload` — `provider: byo-phone-number` referencing the
+  - `byo_phone_number_payload` - `provider: byo-phone-number` referencing the
     credential.
-  - `assistant_payload` — **`model` is a nested object**
+  - `assistant_payload` - **`model` is a nested object**
     (`{provider, model, messages:[{role:system,…}]}`), plus `voice`,
     `transcriber`, an `analysisPlan` (summary + success evaluation), and a
     `server` block (`url`, `secret`) when a webhook URL is configured.
-  - `outbound_call_payload` — `phoneNumberId`, `assistantId`, `customer`, and an
+  - `outbound_call_payload` - `phoneNumberId`, `assistantId`, `customer`, and an
     `assistantOverrides` block carrying `variableValues` and an optional
     per-call `voice` override.
 
@@ -311,12 +311,12 @@ Two paths converge on the same policy (`attempts` vs `max_attempts`):
 `apps/vapi/provisioning.py :: ensure_org_provisioned(org, *, client, force)` is
 **idempotent and incremental**:
 
-1. **Credential** — create the BYO-SIP credential if `vapi_credential_id` is
+1. **Credential** - create the BYO-SIP credential if `vapi_credential_id` is
    empty (requires `TWILIO_SIP_TERMINATION_URI`), then
    `save(update_fields=["vapi_credential_id", …])` **immediately**.
-2. **Phone number** — create the caller-ID number (requires `TWILIO_CALLER_ID`),
+2. **Phone number** - create the caller-ID number (requires `TWILIO_CALLER_ID`),
    save `vapi_phone_number_id` + `default_caller_id`.
-3. **Assistant** — create with prompt/model/voice/transcriber + the webhook
+3. **Assistant** - create with prompt/model/voice/transcriber + the webhook
    `server.url`/`secret`, save `vapi_assistant_id`.
 
 Each ID is persisted **right after** its resource is created (not in one trailing
@@ -329,7 +329,7 @@ recreates everything. Exposed as `manage.py provision_vapi` (warns if
 
 ## 11. Webhooks
 
-- **Endpoint** `apps/webhooks/views.py :: VapiWebhookView` — DRF `APIView`,
+- **Endpoint** `apps/webhooks/views.py :: VapiWebhookView` - DRF `APIView`,
   `AllowAny`, **no authentication class**. It verifies the `X-Vapi-Secret` header
   against `VAPI_WEBHOOK_SECRET` with `hmac.compare_digest` (constant-time). A
   missing/blank configured secret → reject (fail closed). Body must contain a
@@ -341,7 +341,7 @@ recreates everything. Exposed as `manage.py provision_vapi` (warns if
     first `in_progress`.
   - `end-of-call-report` → `handle_end_of_call_report`: persist transcript /
     summary / recording / `structured_outcome` / cost / `raw_end_report`; mark
-    `Call.ENDED`; resolve the lead; kick dispatch. **Idempotent** — re-delivery
+    `Call.ENDED`; resolve the lead; kick dispatch. **Idempotent** - re-delivery
     is detected via `status == ENDED and raw_end_report` and skips lead
     re-resolution.
   - unknown types → logged + ignored (`200`).
@@ -375,7 +375,7 @@ Org-wide default voice, applied **per call** (no extra assistants):
   case-insensitively, normalizing spaces/hyphens to `_`, against `NAME_ALIASES`
   and `PHONE_ALIASES`. Missing name *or* phone column → single error, abort.
 - Per row (line numbers start at 2): require non-empty name; normalize phone to
-  E.164 (`normalize_phone`, default region `US`, `phonenumbers` validation) —
+  E.164 (`normalize_phone`, default region `US`, `phonenumbers` validation) -
   invalid rows collected with reasons, valid rows continue.
 - **Dedup** against existing org phones *and* within-file (`skip_duplicates`).
 - Extra columns → `Lead.variables`. Valid rows `bulk_create`d in one query.
@@ -384,7 +384,7 @@ Org-wide default voice, applied **per call** (no extra assistants):
 
 ## 14. Dashboard
 
-`apps/dashboard/` — server-rendered, `@login_required`, light HTMX.
+`apps/dashboard/` - server-rendered, `@login_required`, light HTMX.
 
 | URL name | Path | View |
 |----------|------|------|
@@ -412,15 +412,15 @@ partial.
 Routers in each app's `api.py`, mounted under `/api/` (`config/urls.py`).
 `SessionAuthentication` + `IsAuthenticated`, `PageNumberPagination` (50/page).
 
-- **LeadViewSet** — list / retrieve / destroy + `@action upload` (multipart CSV)
+- **LeadViewSet** - list / retrieve / destroy + `@action upload` (multipart CSV)
   + `@action manual` (name+phone, E.164-validated via `ManualLeadSerializer`).
-- **CampaignViewSet** — full CRUD; `create` accepts `lead_ids` and attaches them;
+- **CampaignViewSet** - full CRUD; `create` accepts `lead_ids` and attaches them;
   `@action`s `start` / `pause` / `stop` / `add_leads` delegate to `lifecycle`.
   `CampaignSerializer` exposes computed `counts`.
-- **CallViewSet** — read-only list/retrieve, filterable by `?campaign=<id>`.
+- **CallViewSet** - read-only list/retrieve, filterable by `?campaign=<id>`.
 
 The dashboard and API share the same service layer (`lifecycle`, `dispatch`,
-`csv_import`) — no logic duplicated between them.
+`csv_import`) - no logic duplicated between them.
 
 ---
 
@@ -434,9 +434,9 @@ Celery/Redis (`CELERY_BROKER_URL`/`RESULT_BACKEND` default to `REDIS_URL`,
 provisioning inputs (assistant prompt/model/voice/transcriber + Twilio termination
 values) from env.
 
-- `dev.py` — `DEBUG=True`, `ALLOWED_HOSTS=["*"]`, optional
+- `dev.py` - `DEBUG=True`, `ALLOWED_HOSTS=["*"]`, optional
   `CELERY_TASK_ALWAYS_EAGER`.
-- `prod.py` — `DEBUG=False`, SSL redirect, secure cookies, HSTS, proxy SSL header.
+- `prod.py` - `DEBUG=False`, SSL redirect, secure cookies, HSTS, proxy SSL header.
 
 `pyproject.toml` pins Python ≥3.14, deps via `uv`, pytest (`DJANGO_SETTINGS_MODULE
 = config.settings.dev`), and ruff (`E,F,I,UP,B`, line 100, migrations excluded).
@@ -445,14 +445,14 @@ values) from env.
 
 ## 17. Security model
 
-- **Dashboard & API** — login-gated (session auth). MVP is single-org; all
+- **Dashboard & API** - login-gated (session auth). MVP is single-org; all
   querysets are scoped to `Organization.get_default()`.
-- **Webhook** — public but **secret-verified** (constant-time `X-Vapi-Secret`),
+- **Webhook** - public but **secret-verified** (constant-time `X-Vapi-Secret`),
   fail-closed if the secret is unset. Body validated; handler errors swallowed
   into `200` after logging.
-- **Provisioning credentials** — Twilio/Vapi secrets live in env, never in code;
+- **Provisioning credentials** - Twilio/Vapi secrets live in env, never in code;
   Vapi resource IDs persist on the DB row.
-- **Prod hardening** — SSL redirect, `Secure`/HSTS cookies, proxy SSL header in
+- **Prod hardening** - SSL redirect, `Secure`/HSTS cookies, proxy SSL header in
   `prod.py`. (Before going live: real `SECRET_KEY`, pinned `ALLOWED_HOSTS`,
   managed Postgres/Redis, and a non-trial Twilio account with the right Geo
   Permissions + IP ACL.)
@@ -478,17 +478,17 @@ catch template regressions.
 
 ## 19. Known limitations & extension points
 
-- **Single org** — `get_default()` everywhere. To go multi-tenant: resolve the
+- **Single org** - `get_default()` everywhere. To go multi-tenant: resolve the
   org from the request (subdomain/user), drop `pk=1`, keep the existing FKs.
-- **Fixed-window rate limit** — allows boundary bursts; swap the Lua for a
+- **Fixed-window rate limit** - allows boundary bursts; swap the Lua for a
   sliding window if you need smoother egress.
-- **Voice list is static** (`VAPI_VOICES`) — wire to Vapi's voice-list API for a
+- **Voice list is static** (`VAPI_VOICES`) - wire to Vapi's voice-list API for a
   live list, and/or make voice per-campaign by adding a field to `Campaign` and
   reading it in `place_call`.
-- **No call recording storage** — only Vapi's `recording_url` is kept; mirror to
+- **No call recording storage** - only Vapi's `recording_url` is kept; mirror to
   your own object store if you need retention/control.
-- **Provisioning recreates on `--force`** — there's no "update assistant"
+- **Provisioning recreates on `--force`** - there's no "update assistant"
   call; changing model/voice live is done in the Vapi dashboard (or Settings for
   voice). Add a PATCH path if you want app-driven assistant edits.
-- **Beat + worker are separate processes** — fine for one node; for HA run
+- **Beat + worker are separate processes** - fine for one node; for HA run
   multiple workers (dispatch is concurrency-safe) and exactly one beat.

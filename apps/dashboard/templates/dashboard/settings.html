@@ -34,9 +34,9 @@
         {% if org.is_provisioned %}<span class="badge done">Provisioned</span>{% else %}<span class="badge failed">Not provisioned</span>{% endif %}
     </div>
     <table>
-        <tr><th style="width:200px">Assistant ID</th><td class="num">{{ org.vapi_assistant_id|default:"—" }}</td></tr>
-        <tr><th>Phone number ID</th><td class="num">{{ org.vapi_phone_number_id|default:"—" }}</td></tr>
-        <tr><th>Caller ID</th><td class="num">{{ org.default_caller_id|default:"—" }}</td></tr>
+        <tr><th style="width:200px">Assistant ID</th><td class="num">{{ org.vapi_assistant_id|default:"-" }}</td></tr>
+        <tr><th>Phone number ID</th><td class="num">{{ org.vapi_phone_number_id|default:"-" }}</td></tr>
+        <tr><th>Caller ID</th><td class="num">{{ org.default_caller_id|default:"-" }}</td></tr>
         <tr><th>Current voice</th><td>{% if org.default_voice_id %}{{ org.default_voice_id }} <span class="muted">({{ org.default_voice_provider }})</span>{% else %}<span class="muted">Assistant default</span>{% endif %}</td></tr>
     </table>
 </div>

@@ -1,4 +1,4 @@
-# Voice AI — Architecture
+# Voice AI - Architecture
 
 This document is the visual + structural map of the system. For setup and usage
 see [`README.md`](./README.md); for implementation-level detail see
@@ -108,7 +108,7 @@ talks HTTP to Vapi.
 
 ---
 
-## 4. Placing one call — sequence
+## 4. Placing one call - sequence
 
 ```mermaid
 sequenceDiagram
@@ -140,11 +140,11 @@ sequenceDiagram
 ```
 
 If `POST /call` fails, the lead is released back to `FAILED` (retry scheduled)
-or `EXHAUSTED` — the slot is never leaked.
+or `EXHAUSTED` - the slot is never leaked.
 
 ---
 
-## 5. Webhook / outcome — sequence
+## 5. Webhook / outcome - sequence
 
 ```mermaid
 sequenceDiagram
@@ -204,8 +204,8 @@ flowchart TD
 
 Two independent guards bound the call rate:
 
-- **Concurrency** — derived from the DB (`IN_FLIGHT` count), never a counter.
-- **Rate** — a Redis fixed-window token bucket per `campaign:{id}:rate:{minute}`.
+- **Concurrency** - derived from the DB (`IN_FLIGHT` count), never a counter.
+- **Rate** - a Redis fixed-window token bucket per `campaign:{id}:rate:{minute}`.
 
 A lead holds its slot from reservation until a webhook (or failed dispatch)
 resolves it, so concurrency can never exceed the cap even with overlapping ticks.
@@ -287,7 +287,7 @@ lead)` on CampaignLead, `unique(vapi_call_id)` on Call. Every model carries an
 
 ## 8. State machines
 
-### CampaignLead — the dispatch work queue
+### CampaignLead - the dispatch work queue
 
 ```mermaid
 stateDiagram-v2
@@ -303,7 +303,7 @@ stateDiagram-v2
     EXHAUSTED --> [*]
 ```
 
-### Call — mirrors the Vapi call, driven by webhooks
+### Call - mirrors the Vapi call, driven by webhooks
 
 ```mermaid
 stateDiagram-v2

@@ -3,7 +3,7 @@ leads to call. Pure-ish functions so they're unit-testable; the Celery tasks in
 apps.calls.tasks call these and do the actual Vapi I/O.
 
 Concurrency model: a CampaignLead in IN_FLIGHT occupies one slot for its whole
-active lifetime — from the moment it's reserved (here) until a webhook or a
+active lifetime - from the moment it's reserved (here) until a webhook or a
 failed dispatch flips it to done/failed/exhausted. Counting IN_FLIGHT leads
 (rather than Call rows) closes the race where a reserved lead hasn't created
 its Call row yet, and keeps the DB the single source of truth.

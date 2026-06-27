@@ -24,11 +24,11 @@
     <div class="panel">
         <h2>Outcome</h2>
         <table>
-            <tr><th>Ended reason</th><td>{{ call.ended_reason|default:"—" }}</td></tr>
-            <tr><th>Started</th><td>{{ call.started_at|default:"—" }}</td></tr>
-            <tr><th>Ended</th><td>{{ call.ended_at|default:"—" }}</td></tr>
-            <tr><th>Cost</th><td>{% if call.cost is not None %}${{ call.cost }}{% else %}—{% endif %}</td></tr>
-            <tr><th>Success eval</th><td>{{ call.structured_outcome.successEvaluation|default:"—" }}</td></tr>
+            <tr><th>Ended reason</th><td>{{ call.ended_reason|default:"-" }}</td></tr>
+            <tr><th>Started</th><td>{{ call.started_at|default:"-" }}</td></tr>
+            <tr><th>Ended</th><td>{{ call.ended_at|default:"-" }}</td></tr>
+            <tr><th>Cost</th><td>{% if call.cost is not None %}${{ call.cost }}{% else %}-{% endif %}</td></tr>
+            <tr><th>Success eval</th><td>{{ call.structured_outcome.successEvaluation|default:"-" }}</td></tr>
         </table>
     </div>
     <div class="panel">
