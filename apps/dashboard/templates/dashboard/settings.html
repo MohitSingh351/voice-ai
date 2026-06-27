@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Settings · Voice AI{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div class="grow">
+        <h1>Settings</h1>
+        <p class="subtitle">Configure how your AI agent sounds and which Vapi resources it uses.</p>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Agent voice</h2>
+    <p class="muted" style="margin-top:-6px; margin-bottom:16px; font-size:13px;">
+        Applied to every outbound call across all campaigns. Choose
+        <em>Assistant default</em> to use whatever voice is set on the assistant in your Vapi dashboard.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="field" style="max-width:320px">
+            <label>Voice</label>
+            <select name="default_voice_id">
+                <option value="" {% if not org.default_voice_id %}selected{% endif %}>Assistant default (Vapi dashboard)</option>
+                {% for v in voices %}
+                <option value="{{ v }}" {% if org.default_voice_id == v %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit">Save voice</button>
+    </form>
+</div>
+
+<div class="panel flush">
+    <div class="panel-head"><h2 class="grow">Provisioned Vapi resources</h2>
+        {% if org.is_provisioned %}<span class="badge done">Provisioned</span>{% else %}<span class="badge failed">Not provisioned</span>{% endif %}
+    </div>
+    <table>
+        <tr><th style="width:200px">Assistant ID</th><td class="num">{{ org.vapi_assistant_id|default:"—" }}</td></tr>
+        <tr><th>Phone number ID</th><td class="num">{{ org.vapi_phone_number_id|default:"—" }}</td></tr>
+        <tr><th>Caller ID</th><td class="num">{{ org.default_caller_id|default:"—" }}</td></tr>
+        <tr><th>Current voice</th><td>{% if org.default_voice_id %}{{ org.default_voice_id }} <span class="muted">({{ org.default_voice_provider }})</span>{% else %}<span class="muted">Assistant default</span>{% endif %}</td></tr>
+    </table>
+</div>
+{% endblock %}

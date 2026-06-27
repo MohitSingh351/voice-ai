@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Django
+*.log
+db.sqlite3
+/staticfiles/
+/media/
+
+# Env / secrets
+.env
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+
+.env.example

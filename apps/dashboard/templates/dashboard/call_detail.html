@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Call · {{ call.campaign_lead.lead.name }}{% endblock %}
+{% block content %}
+<p class="meta" style="margin:0 0 10px"><a href="{% url 'campaign_detail' call.campaign_lead.campaign.id %}">← {{ call.campaign_lead.campaign.name }}</a></p>
+<div class="page-head">
+    <div class="grow">
+        <h1 style="display:flex; align-items:center; gap:12px;">
+            {{ call.campaign_lead.lead.name }}
+            <span class="badge {{ call.status }}">{{ call.get_status_display }}</span>
+        </h1>
+        <p class="subtitle num">{{ call.campaign_lead.lead.phone_e164 }} · Vapi call {{ call.vapi_call_id }}</p>
+    </div>
+    {% if call.recording_url %}
+    <div class="actions">
+        <a class="btn secondary" href="{{ call.recording_url }}" target="_blank">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Recording
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="panel">
+        <h2>Outcome</h2>
+        <table>
+            <tr><th>Ended reason</th><td>{{ call.ended_reason|default:"—" }}</td></tr>
+            <tr><th>Started</th><td>{{ call.started_at|default:"—" }}</td></tr>
+            <tr><th>Ended</th><td>{{ call.ended_at|default:"—" }}</td></tr>
+            <tr><th>Cost</th><td>{% if call.cost is not None %}${{ call.cost }}{% else %}—{% endif %}</td></tr>
+            <tr><th>Success eval</th><td>{{ call.structured_outcome.successEvaluation|default:"—" }}</td></tr>
+        </table>
+    </div>
+    <div class="panel">
+        <h2>Summary</h2>
+        <p style="margin-top:0">{{ call.summary|default:"No summary yet."|linebreaksbr }}</p>
+        {% if call.structured_outcome.structuredData %}
+        <h2 style="margin-top:20px">Structured data</h2>
+        <pre>{{ call.structured_outcome.structuredData }}</pre>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Transcript</h2>
+    {% if call.transcript %}<pre>{{ call.transcript }}</pre>{% else %}<p class="muted" style="margin:0">No transcript yet.</p>{% endif %}
+</div>
+{% endblock %}

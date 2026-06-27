@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Leads · Voice AI{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div class="grow">
+        <h1>Leads</h1>
+        <p class="subtitle">People your AI agent can call. {{ lead_count }} lead{{ lead_count|pluralize }} stored.</p>
+    </div>
+    {% if lead_count %}
+    <div class="actions">
+        <a class="btn" href="{% url 'campaign_list' %}">Create campaign →</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="panel">
+        <h2>Import a CSV</h2>
+        <p class="muted" style="margin-top:-6px; margin-bottom:16px; font-size:13px;">
+            Needs a <code>name</code> and a <code>phone</code> column. Extra columns
+            (company, city…) are passed to the agent for personalization.
+        </p>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="csv">
+            <div class="field"><input type="file" name="file" accept=".csv" required></div>
+            <button type="submit">Import CSV</button>
+        </form>
+    </div>
+
+    <div class="panel">
+        <h2>Add a single lead</h2>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="manual">
+            <div class="field">
+                <label>Name</label>
+                <input type="text" name="name" placeholder="Ada Lovelace" required>
+            </div>
+            <div class="field">
+                <label>Phone</label>
+                <input type="text" name="phone" placeholder="+1 415 555 2671" required>
+                <div class="hint">Include the country code (e.g. +91 for India).</div>
+            </div>
+            <button type="submit">Add lead</button>
+        </form>
+    </div>
+</div>
+
+<div class="panel flush">
+    <div class="panel-head">
+        <h2 class="grow">All leads</h2>
+        <span class="meta num">{{ lead_count }} total</span>
+    </div>
+    {% if leads %}
+    <table>
+        <thead><tr><th>Name</th><th>Phone</th><th>Source</th><th>Added</th><th style="width:90px"></th></tr></thead>
+        <tbody>
+        {% for lead in leads %}
+            <tr>
+                <td><span class="name">{{ lead.name }}</span></td>
+                <td class="muted num">{{ lead.phone_e164 }}</td>
+                <td><span class="badge pending">{{ lead.get_source_display }}</span></td>
+                <td class="meta">{{ lead.created_at|date:"M j, Y" }}</td>
+                <td style="text-align:right">
+                    <form class="inline-form" method="post" action="{% url 'lead_delete' lead.id %}"
+                          onsubmit="return confirm('Delete {{ lead.name|escapejs }}? This cannot be undone.');">
+                        {% csrf_token %}
+                        <button class="ghost danger btn-sm" type="submit" title="Delete lead">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        <h3>No leads yet</h3>
+        <p>Import a CSV or add a single lead to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

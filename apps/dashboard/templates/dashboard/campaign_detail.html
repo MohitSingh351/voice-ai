@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} · Voice AI{% endblock %}
+{% block content %}
+<p class="meta" style="margin:0 0 10px"><a href="{% url 'campaign_list' %}">← Campaigns</a></p>
+<div class="page-head">
+    <div class="grow">
+        <h1 style="display:flex; align-items:center; gap:12px;">
+            {{ campaign.name }}
+            <span class="badge {{ campaign.status }}">{{ campaign.get_status_display }}</span>
+        </h1>
+        <p class="subtitle">
+            Max {{ campaign.max_concurrent_calls }} concurrent · {{ campaign.calls_per_minute }}/min ·
+            up to {{ campaign.max_attempts }} attempt{{ campaign.max_attempts|pluralize }} per lead.
+        </p>
+    </div>
+    <div class="actions">
+        <form class="inline-form" method="post" action="{% url 'campaign_action' campaign.id 'start' %}">{% csrf_token %}
+            <button type="submit" {% if campaign.status == 'running' %}disabled{% endif %}>
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {% if campaign.status == 'paused' %}Resume{% else %}Start{% endif %}
+            </button>
+        </form>
+        <form class="inline-form" method="post" action="{% url 'campaign_action' campaign.id 'pause' %}">{% csrf_token %}
+            <button class="secondary" type="submit" {% if campaign.status != 'running' %}disabled{% endif %}>Pause</button>
+        </form>
+        <form class="inline-form" method="post" action="{% url 'campaign_action' campaign.id 'stop' %}">{% csrf_token %}
+            <button class="secondary" type="submit" {% if campaign.status == 'completed' %}disabled{% endif %}>Stop</button>
+        </form>
+    </div>
+</div>
+
+<div hx-get="{% url 'campaign_leads_partial' campaign.id %}"
+     hx-trigger="load, every 4s"
+     hx-swap="innerHTML">
+    {% include "dashboard/_leads_table.html" %}
+</div>
+{% endblock %}

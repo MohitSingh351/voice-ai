@@ -1,0 +1,31 @@
+{% load dashboard_extras %}
+<div class="stats">
+    <div class="stat-card accent"><div class="label">Total</div><div class="stat">{{ counts.total }}</div></div>
+    <div class="stat-card"><div class="label">Pending</div><div class="stat">{{ counts.pending }}</div></div>
+    <div class="stat-card"><div class="label">In flight</div><div class="stat">{{ counts.in_flight }}</div></div>
+    <div class="stat-card"><div class="label">Done</div><div class="stat">{{ counts.done }}</div></div>
+    <div class="stat-card"><div class="label">Failed</div><div class="stat">{{ counts.failed }}</div></div>
+    <div class="stat-card"><div class="label">Exhausted</div><div class="stat">{{ counts.exhausted }}</div></div>
+</div>
+<div class="panel flush">
+    <div class="panel-head"><h2 class="grow">Leads</h2><span class="meta num">{{ counts.total }} total</span></div>
+    <table>
+        <thead><tr><th>Lead</th><th>Phone</th><th>Lead status</th><th class="num">Attempts</th><th>Last call</th><th></th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            {% with call=calls|get:row.latest_call %}
+            <tr>
+                <td><span class="name">{{ row.lead.name }}</span></td>
+                <td class="muted num">{{ row.lead.phone_e164 }}</td>
+                <td><span class="badge {{ row.status }}">{{ row.get_status_display }}</span></td>
+                <td class="num">{{ row.attempts }}</td>
+                <td>{% if call %}<span class="badge {{ call.status }}">{{ call.get_status_display }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
+                <td style="text-align:right">{% if call %}<a href="{% url 'call_detail' call.id %}">Details →</a>{% endif %}</td>
+            </tr>
+            {% endwith %}
+        {% empty %}
+            <tr><td colspan="6"><div class="empty" style="padding:32px 16px"><p style="margin:0">No leads attached to this campaign.</p></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

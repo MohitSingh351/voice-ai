@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Campaigns · Voice AI{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div class="grow">
+        <h1>Campaigns</h1>
+        <p class="subtitle">Batches of outbound AI calls with throttle &amp; retry policy.</p>
+    </div>
+    <div class="actions">
+        <a class="btn secondary" href="{% url 'leads' %}">Manage leads</a>
+    </div>
+</div>
+
+{% if not org.is_provisioned %}
+<div class="notice">
+    <b>Vapi isn't provisioned yet.</b>
+    Run <code>python manage.py provision_vapi</code> (after filling <code>.env</code>) so the agent can place calls.
+</div>
+{% endif %}
+
+<div class="panel">
+    <h2>New campaign</h2>
+    {% if lead_count %}
+    <p class="muted" style="margin-top:-6px; margin-bottom:16px; font-size:13px;">
+        Attaches all {{ lead_count }} stored lead{{ lead_count|pluralize }}. You can start it on the next screen.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label>Campaign name</label>
+            <input type="text" name="name" placeholder="Q3 Outbound" required>
+        </div>
+        <div class="row">
+            <div class="field"><label>Max concurrent calls</label><input class="num" type="number" name="max_concurrent_calls" value="5" min="1"></div>
+            <div class="field"><label>Calls per minute</label><input class="num" type="number" name="calls_per_minute" value="10" min="0"></div>
+            <div class="field"><label>Max attempts per lead</label><input class="num" type="number" name="max_attempts" value="2" min="1"></div>
+        </div>
+        <button type="submit">Create campaign</button>
+    </form>
+    {% else %}
+    <div class="empty" style="padding:32px 16px">
+        <h3>No leads to call yet</h3>
+        <p>Add leads first, then come back to create a campaign.</p>
+        <a class="btn" href="{% url 'leads' %}">Add leads</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="panel flush">
+    <div class="panel-head"><h2 class="grow">All campaigns</h2></div>
+    {% if campaigns %}
+    <table>
+        <thead><tr><th>Name</th><th>Status</th><th class="num">Leads</th><th class="num">Done</th><th class="num">In flight</th><th class="num">Failed</th><th></th></tr></thead>
+        <tbody>
+        {% for c, counts in campaigns %}
+            <tr>
+                <td><a class="name" href="{% url 'campaign_detail' c.id %}">{{ c.name }}</a></td>
+                <td><span class="badge {{ c.status }}">{{ c.get_status_display }}</span></td>
+                <td class="num">{{ counts.total }}</td>
+                <td class="num">{{ counts.done }}</td>
+                <td class="num">{{ counts.in_flight }}</td>
+                <td class="num">{{ counts.failed }}</td>
+                <td style="text-align:right"><a href="{% url 'campaign_detail' c.id %}">View →</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.69 2.34a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.74-1.74a2 2 0 0 1 2.11-.45c.74.33 1.53.56 2.34.69A2 2 0 0 1 22 16.92z"/></svg>
+        <h3>No campaigns yet</h3>
+        <p>Create your first campaign above to start calling.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

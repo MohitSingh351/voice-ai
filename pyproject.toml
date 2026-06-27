@@ -1,0 +1,38 @@
+[project]
+name = "voice-ai"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "celery>=5.4",
+    "django>=5.1,<5.3",
+    "django-environ>=0.11",
+    "django-htmx>=1.19",
+    "djangorestframework>=3.15",
+    "httpx>=0.27",
+    "phonenumbers>=8.13",
+    "psycopg[binary]>=3.2",
+    "redis>=5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-django>=4.9",
+    "respx>=0.21",
+    "ruff>=0.7",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.dev"
+python_files = ["test_*.py", "tests.py"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
